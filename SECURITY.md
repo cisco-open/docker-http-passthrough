@@ -1,56 +1,57 @@
-# Security Policy
+# Security Policies and Procedures
 
-## Supported Versions
+This document outlines security procedures and general policies for the
+`docker-http-passthrough` project.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+- [Disclosing a security issue](#disclosing-a-security-issue)
+- [Vulnerability management](#vulnerability-management)
+- [Suggesting changes](#suggesting-changes)
 
-## Reporting a Vulnerability
+## Disclosing a security issue
 
-If you discover a security vulnerability in this project, please report it responsibly.
+The `docker-http-passthrough` maintainers take all security issues in the project
+seriously. Thank you for improving the security of `docker-http-passthrough`. We
+appreciate your dedication to responsible disclosure and will make every effort
+to acknowledge your contributions.
 
-### How to Report
+`docker-http-passthrough` leverages GitHub's private vulnerability reporting.
 
-**Do NOT open a public GitHub issue for security vulnerabilities.**
+To learn more about this feature and how to submit a vulnerability report,
+review [GitHub's documentation on private reporting](https://docs.github.com/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability).
 
-Instead, please report security vulnerabilities via one of these methods:
+Here are some helpful details to include in your report:
 
-1. **Email**: Send details to the Cisco Product Security Incident Response Team (PSIRT) at psirt@cisco.com
-2. **Cisco Security Vulnerability Policy**: https://sec.cloudapps.cisco.com/security/center/resources/security_vulnerability_policy.html
+- a detailed description of the issue
+- the steps required to reproduce the issue
+- versions of the project that may be affected by the issue
+- if known, any mitigations for the issue
 
-### What to Include
+A maintainer will acknowledge the report within three (3) business days, and
+will send a more detailed response within an additional three (3) business days
+indicating the next steps in handling your report.
 
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Any suggested fixes (optional)
+If you've been unable to successfully draft a vulnerability report via GitHub
+or have not received a response during the alloted response window, please
+reach out via the [Cisco Open security contact email](mailto:oss-security@cisco.com).
 
-### Response Timeline
+After the initial reply to your report, the maintainers will endeavor to keep
+you informed of the progress towards a fix and full announcement, and may ask
+for additional information or guidance.
 
-- **Initial Response**: Within 48 hours
-- **Status Update**: Within 7 days
-- **Resolution Target**: Based on severity
+## Vulnerability management
 
-### Severity Classification
+When the maintainers receive a disclosure report, they will assign it to a
+primary handler.
 
-| Severity | Response Time | Examples |
-|----------|--------------|----------|
-| Critical | 24-48 hours | RCE, authentication bypass |
-| High | 7 days | Data exposure, privilege escalation |
-| Medium | 30 days | Information disclosure |
-| Low | 90 days | Minor issues |
+This person will coordinate the fix and release process, which involves the
+following steps:
 
-## Security Best Practices
+- confirming the issue
+- determining affected versions of the project
+- auditing code to find any potential similar problems
+- preparing fixes for all releases under maintenance
 
-When deploying this application:
+## Suggesting changes
 
-1. **Run as non-root user** - Use the provided Kubernetes securityContext
-2. **Network isolation** - Deploy behind a firewall or VPN
-3. **Authentication** - Add an authentication layer if exposing externally
-4. **Resource limits** - Configure appropriate CPU/memory limits
-5. **Monitoring** - Enable OpenTelemetry tracing for audit trails
-
-## Acknowledgments
-
-We appreciate responsible disclosure and will acknowledge security researchers who report valid vulnerabilities (with their permission).
+If you have suggestions on how this process could be improved please submit an
+issue or pull request.

@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Cisco Systems, Inc.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: docker-http-passthrough
+  labels:
+    app: docker-http-passthrough
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-http-passthrough
+  namespace: docker-http-passthrough
+  labels:
+    app: docker-http-passthrough
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-http-passthrough
+  template:
+    metadata:
+      labels:
+        app: docker-http-passthrough
+    spec:
+      containers:
+        - name: docker-http-passthrough
+          image: docker-http-passthrough:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: RUST_LOG
+              value: "info"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-http-passthrough
+  namespace: docker-http-passthrough
+  labels:
+    app: docker-http-passthrough
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: docker-http-passthrough
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

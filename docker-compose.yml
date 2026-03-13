@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Cisco Systems, Inc.
+
+version: '3.8'
+
+services:
+  docker-http-passthrough:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: docker-http-passthrough:latest
+    container_name: docker-http-passthrough
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - RUST_LOG=info
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://rotel-splunk-collector:4317
+    networks:
+      - default
+      - app-net
+      - rotel_splunk_contrib_otel-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  app-net:
+    external: true
+  rotel_splunk_contrib_otel-network:
+    external: true

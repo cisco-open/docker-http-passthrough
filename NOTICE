@@ -5,3 +5,17 @@ This product includes software developed at Cisco Systems, Inc.
 (https://www.cisco.com/).
 
 Licensed under the Apache License, Version 2.0.
+
+Third-party notices:
+
+Mermaid
+The Zensical documentation runtime loads Mermaid from jsDelivr to render
+Mermaid diagrams. Mermaid is licensed under the MIT License.
+Copyright (c) 2014-2022 Knut Sveidqvist.
+Source: https://github.com/mermaid-js/mermaid
+
+Zensical
+Documentation can be built with Zensical, a static site generator licensed
+under the MIT License.
+Copyright (c) 2025-2026 Zensical and contributors.
+Source: https://github.com/zensical/zensical

@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Cisco Systems, Inc.
+# Documentation build tool: Zensical, MIT License. See NOTICE.
+
+[project]
+site_name = "Docker HTTP Passthrough"
+site_description = "Comprehensive documentation for Docker HTTP Passthrough registry routing, authentication, Cisco IOS-XE app-hosting, observability, and OCI publishing."
+site_author = "Cisco Systems, Inc."
+docs_dir = "docs/zensical"
+site_dir = "site"
+dev_addr = "127.0.0.1:8090"
+extra_javascript = ["javascripts/mermaid.mjs"]
+copyright = "Copyright &copy; 2026 Cisco Systems, Inc."
+nav = [
+  { "Overview" = "index.md" },
+  { "Architecture" = "architecture.md" },
+  { "Routes and Filenames" = "routes.md" },
+  { "Registry Authentication" = "authentication.md" },
+  { "Cisco IOS-XE Workflows" = "cisco-ios-xe.md" },
+  { "Registry Support" = "registry-support.md" },
+  { "OpenTelemetry" = "observability.md" },
+  { "Deployment" = "deployment.md" },
+  { "Validation" = "validation.md" },
+  { "Security" = "security.md" },
+  { "Licensing" = "licensing.md" },
+]
+
+[project.theme]
+variant = "modern"
+
+[project.markdown_extensions.admonition]
+
+[project.markdown_extensions.tables]
+
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]

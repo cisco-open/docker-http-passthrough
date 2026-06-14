@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Cisco Systems, Inc.
+
+.git
+.github
+target
+docs
+.env
+.env.*
+!.env.example
+*.tar
+*.tar.gz
+*.tgz
+*.log
+.DS_Store

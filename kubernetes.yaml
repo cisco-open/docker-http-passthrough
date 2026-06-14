@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: docker-http-passthrough
-          image: docker-http-passthrough:latest
+          image: ghcr.io/cisco-open/docker-http-passthrough:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

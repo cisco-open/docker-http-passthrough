@@ -4,6 +4,7 @@ This document outlines security procedures and general policies for the
 `docker-http-passthrough` project.
 
 - [Disclosing a security issue](#disclosing-a-security-issue)
+- [Registry credential handling](#registry-credential-handling)
 - [Vulnerability management](#vulnerability-management)
 - [Suggesting changes](#suggesting-changes)
 
@@ -37,6 +38,31 @@ reach out via the [Cisco Open security contact email](mailto:oss-security@cisco.
 After the initial reply to your report, the maintainers will endeavor to keep
 you informed of the progress towards a fix and full announcement, and may ask
 for additional information or guidance.
+
+## Registry credential handling
+
+The passthrough service supports three credential patterns:
+
+- static service credentials through `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`, or `REGISTRY_BEARER_TOKEN`
+- optional client Basic credentials on `/docker/...` and `/registry/...`
+- required client Basic credentials on `/registry-auth/{scheme}/{host}/docker/{filename}`
+
+Registry credentials are never encoded in the image filename. Client-supplied
+Basic credentials are used only for the current registry token exchange or
+direct Basic registry request, and are not persisted by the passthrough service.
+
+For Cisco IOS-XE clients, remove global HTTP client credentials after a transfer
+when they should not remain in running config:
+
+```text
+configure terminal
+no ip http client username
+no ip http client password
+end
+```
+
+Use least-privilege registry tokens. For GHCR private packages, use a token that
+can read only the packages needed for the transfer where possible.
 
 ## Vulnerability management
 

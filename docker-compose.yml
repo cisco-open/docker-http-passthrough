@@ -1,37 +1,33 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Cisco Systems, Inc.
 
-version: '3.8'
-
 services:
   docker-http-passthrough:
-    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile
-    image: docker-http-passthrough:latest
+    image: ghcr.io/cisco-open/docker-http-passthrough:local
     container_name: docker-http-passthrough
     ports:
       - "8080:8080"
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
-      - RUST_LOG=info
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://rotel-splunk-collector:4317
-    networks:
-      - default
-      - app-net
-      - rotel_splunk_contrib_otel-network
+      - RUST_LOG=${RUST_LOG:-info}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-docker-http-passthrough}
+      - REGISTRY_URL=${REGISTRY_URL:-https://registry-1.docker.io}
+      - REGISTRY_AUTH_URL=${REGISTRY_AUTH_URL:-}
+      - REGISTRY_SERVICE=${REGISTRY_SERVICE:-}
+      - REGISTRY_NAME=${REGISTRY_NAME:-docker.io}
+      - REGISTRY_USERNAME=${REGISTRY_USERNAME:-}
+      - REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-}
+      - REGISTRY_BEARER_TOKEN=${REGISTRY_BEARER_TOKEN:-}
+      - REGISTRY_TOKEN
+      - REGISTRY_CLIENT_AUTH=${REGISTRY_CLIENT_AUTH:-optional}
+      - REGISTRY_DEFAULT_NAMESPACE
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-
-networks:
-  app-net:
-    external: true
-  rotel_splunk_contrib_otel-network:
-    external: true

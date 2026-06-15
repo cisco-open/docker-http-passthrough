@@ -17,13 +17,14 @@ This project follows the [Cisco Open Source Code of Conduct](CODE_OF_CONDUCT.md)
 
 ### Submitting Changes
 
-1. **Fork the repository** and create your branch from `master`
+1. **Fork the repository** and create your branch from `main`
 2. **Write clear, concise commit messages**
 3. **Add tests** for new functionality
-4. **Ensure all tests pass**: `cargo test`
-5. **Run lints**: `cargo clippy`
-6. **Format code**: `cargo fmt`
-7. **Submit a pull request**
+4. **Ensure all tests pass**: `cargo test --locked --all-targets --all-features`
+5. **Run lints**: `cargo clippy --locked --all-targets --all-features -- -D warnings`
+6. **Format code**: `cargo fmt --check`
+7. **Update documentation** when routes, registry behavior, telemetry, or Cisco workflows change
+8. **Submit a pull request**
 
 ### Pull Request Guidelines
 
@@ -43,16 +44,29 @@ cd docker-http-passthrough
 cargo build
 
 # Run tests
-cargo test
+cargo test --locked --all-targets --all-features
 
 # Run with debug logging
 RUST_LOG=debug cargo run
 
 # Run lints
-cargo clippy -- -D warnings
+cargo clippy --locked --all-targets --all-features -- -D warnings
 
-# Format code
-cargo fmt
+# Check formatting
+cargo fmt --check
+```
+
+For registry changes, include coverage for the affected route mode:
+
+- `/docker/{filename}` for default registry behavior
+- `/registry/{scheme}/{host}/docker/{filename}` for request-selected registries
+- `/registry-auth/{scheme}/{host}/docker/{filename}` for client-supplied credentials
+- telemetry attributes and parent/child span relationships for new request or registry operations
+
+For container image changes, validate the local OCI image build path:
+
+```bash
+docker buildx bake image-local
 ```
 
 ### Commit Message Format

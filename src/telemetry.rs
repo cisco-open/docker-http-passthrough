@@ -2,9 +2,10 @@
 // Copyright 2026 Cisco Systems, Inc.
 
 use opentelemetry::{global, KeyValue};
+use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::trace as sdktrace;
 use opentelemetry_sdk::Resource;
-use opentelemetry_otlp::WithExportConfig;
 use std::env;
 use tracing::info;
 
@@ -25,9 +26,10 @@ impl Drop for TelemetryGuard {
 pub fn init_telemetry() -> TelemetryGuard {
     // Load .env file if present
     let _ = dotenvy::dotenv();
+    global::set_text_map_propagator(TraceContextPropagator::new());
 
     let endpoint = env::var("OTEL_EXPORTER_OTLP_ENDPOINT").unwrap_or_default();
-    
+
     if endpoint.is_empty() {
         info!("OTEL_EXPORTER_OTLP_ENDPOINT not set, OpenTelemetry export disabled");
         return TelemetryGuard { enabled: false };
@@ -91,9 +93,7 @@ fn init_tracer(endpoint: &str) -> Result<(), opentelemetry::trace::TraceError> {
     let tracer_provider = opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(exporter)
-        .with_trace_config(
-            sdktrace::Config::default().with_resource(Resource::new(resource_kvs)),
-        )
+        .with_trace_config(sdktrace::Config::default().with_resource(Resource::new(resource_kvs)))
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
     global::set_tracer_provider(tracer_provider.provider().unwrap());

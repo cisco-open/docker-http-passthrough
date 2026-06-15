@@ -1,0 +1,650 @@
+<!--
+SPDX-License-Identifier: Apache-2.0
+Copyright 2026 Cisco Systems, Inc.
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Docker HTTP Passthrough</title>
+    <meta
+      name="description"
+      content="Download Docker images from public and private registries as Docker save-compatible tar archives over plain HTTP."
+    />
+    <link rel="stylesheet" href="./styles.css?v=2" />
+  </head>
+  <body>
+    <header class="site-nav" data-nav>
+      <a class="brand" href="#top" aria-label="Docker HTTP Passthrough home">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+        <span>Docker HTTP Passthrough</span>
+      </a>
+
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav id="nav-menu" class="nav-links" aria-label="Primary">
+        <a href="#modes">Modes</a>
+        <a href="#builder">Builder</a>
+        <a href="#oci-image">OCI Image</a>
+        <a href="#topology">Topology</a>
+        <a href="#flow">Flow</a>
+        <a href="#observability">Telemetry</a>
+        <a href="#validation">Validation</a>
+        <a href="#examples">Examples</a>
+        <a
+          class="nav-cta"
+          href="https://github.com/cisco-open/docker-http-passthrough/blob/main/README.md"
+        >Docs</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <canvas id="hero-canvas" class="hero-canvas" aria-hidden="true"></canvas>
+        <div class="hero-shade" aria-hidden="true"></div>
+
+        <div class="hero-content">
+          <p class="eyebrow">Cisco network device friendly container delivery</p>
+          <h1 id="hero-title">Docker HTTP Passthrough</h1>
+          <p class="hero-copy">
+            A registry-aware HTTP service that turns Docker images into tar archives Cisco
+            devices can retrieve with ordinary <code>copy http</code> workflows.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button primary" href="#builder">Build a URL</a>
+            <a class="button secondary" href="#topology">View topology</a>
+          </div>
+
+          <div class="hero-terminal" aria-label="Quick start command">
+            <div class="terminal-top">
+              <span>Quick Start</span>
+              <button class="icon-button copy-button" type="button" data-copy-target="quick-start">
+                Copy
+              </button>
+            </div>
+            <pre id="quick-start"><code>docker compose up -d
+curl -o nginx.tar \
+  http://localhost:8080/docker/nginx_latest.tar
+docker load -i nginx.tar</code></pre>
+          </div>
+        </div>
+
+        <div class="hero-preview" aria-label="Live route preview">
+          <div class="preview-row">
+            <span class="preview-label">Cisco CLI</span>
+            <span class="preview-status">HTTP ready</span>
+          </div>
+          <code>copy http://10.20.30.40:8080/docker/nginx_latest.tar flash:nginx.tar</code>
+          <div class="preview-metrics" aria-label="Capabilities">
+            <span>Private registries</span>
+            <span>Basic challenge</span>
+            <span>GHCR</span>
+            <span>Multi-arch OCI</span>
+            <span>OTel traces</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="modes" class="section" aria-labelledby="modes-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Route selection</p>
+          <h2 id="modes-title">Choose where registry details come from</h2>
+          <p>
+            Use a static default registry, let the request choose the registry, or let the
+            Cisco device provide both registry details and credentials per download.
+          </p>
+        </div>
+
+        <div class="mode-grid">
+          <article class="mode-card reveal">
+            <div class="mode-number">01</div>
+            <h3>Configured default</h3>
+            <p>
+              The passthrough container supplies registry settings through environment
+              variables. Clients keep using the short <code>/docker/{filename}</code> route.
+            </p>
+            <code>/docker/nginx_latest.tar</code>
+          </article>
+
+          <article class="mode-card reveal">
+            <div class="mode-number">02</div>
+            <h3>Request-selected registry</h3>
+            <p>
+              The request URL carries the registry scheme and host. Useful for GHCR,
+              Docker Hub aliases, or an enterprise registry such as registry2. Credentials
+              can still come from the service when needed.
+            </p>
+            <code>/registry/https/ghcr.io/docker/org__app_latest.tar</code>
+          </article>
+
+          <article class="mode-card reveal">
+            <div class="mode-number">03</div>
+            <h3>Request-selected auth</h3>
+            <p>
+              The service challenges the client with HTTP Basic auth and forwards those
+              credentials upstream for the selected registry request without storing them.
+            </p>
+            <code>/registry-auth/http/registry2:5000/docker/team__api_1.0.tar</code>
+          </article>
+        </div>
+      </section>
+
+      <section id="builder" class="section builder-section" aria-labelledby="builder-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Interactive builder</p>
+          <h2 id="builder-title">Generate copy-ready URLs</h2>
+          <p>
+            Select a route mode, enter image details, and generate the HTTP URL plus a
+            Cisco <code>copy http</code> command.
+          </p>
+        </div>
+
+        <div class="builder-shell reveal">
+          <div class="builder-controls">
+            <fieldset class="segmented" aria-label="Download mode">
+              <legend>Download mode</legend>
+              <label>
+                <input type="radio" name="mode" value="docker" checked />
+                <span>Default</span>
+              </label>
+              <label>
+                <input type="radio" name="mode" value="registry" />
+                <span>Registry URL</span>
+              </label>
+              <label>
+                <input type="radio" name="mode" value="registry-auth" />
+                <span>Registry + Auth</span>
+              </label>
+            </fieldset>
+
+            <div class="form-grid">
+              <label>
+                <span>Passthrough host</span>
+                <input id="passthrough-host" value="10.20.30.40:8080" autocomplete="off" />
+              </label>
+              <label>
+                <span>Registry scheme</span>
+                <select id="registry-scheme">
+                  <option value="https">https</option>
+                  <option value="http">http</option>
+                </select>
+              </label>
+              <label>
+                <span>Registry host</span>
+                <input id="registry-host" value="docker.io" autocomplete="off" />
+              </label>
+              <label>
+                <span>Repository path</span>
+                <input id="image-path" value="nginx" autocomplete="off" />
+              </label>
+              <label>
+                <span>Tag</span>
+                <input id="image-tag" value="latest" autocomplete="off" />
+              </label>
+              <label>
+                <span>Flash filename</span>
+                <input id="flash-name" value="nginx.tar" autocomplete="off" />
+              </label>
+            </div>
+
+            <div class="hint-panel" id="builder-hint">
+              Default mode uses the registry configured on the passthrough service.
+            </div>
+          </div>
+
+          <div class="builder-output">
+            <div class="output-block">
+              <div class="output-header">
+                <span>HTTP URL</span>
+                <button class="icon-button copy-button" type="button" data-copy-target="output-url">
+                  Copy
+                </button>
+              </div>
+              <pre id="output-url"></pre>
+            </div>
+
+            <div class="output-block">
+              <div class="output-header">
+                <span>Cisco CLI</span>
+                <button class="icon-button copy-button" type="button" data-copy-target="output-cli">
+                  Copy
+                </button>
+              </div>
+              <pre id="output-cli"></pre>
+            </div>
+
+            <div class="parse-box" aria-live="polite">
+              <span>Parsed image</span>
+              <strong id="parsed-image">library/nginx:latest</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="oci-image" class="section validation-section" aria-labelledby="oci-image-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Published OCI image</p>
+          <h2 id="oci-image-title">Install the passthrough service from GHCR</h2>
+          <p>
+            The project publishes a multi-arch image for <code>linux/amd64</code> and
+            <code>linux/arm64</code> at <code>ghcr.io/cisco-open/docker-http-passthrough</code>.
+          </p>
+        </div>
+
+        <div class="validation-grid reveal">
+          <article>
+            <h3>Docker</h3>
+            <p>Run the service directly from the published OCI image.</p>
+            <code>docker run -d -p 8080:8080 ghcr.io/cisco-open/docker-http-passthrough:latest</code>
+          </article>
+          <article>
+            <h3>Kubernetes</h3>
+            <p>Use the included manifest, which points at the GHCR image by default.</p>
+            <code>kubectl apply -f kubernetes.yaml</code>
+          </article>
+          <article>
+            <h3>App-hosting source</h3>
+            <p>
+              Use the GHCR image reference directly where supported, or convert it to a
+              Docker save archive with the passthrough route for IOS-XE CLI installs.
+            </p>
+            <code>ghcr.io/cisco-open/docker-http-passthrough:latest</code>
+          </article>
+        </div>
+      </section>
+
+      <section id="topology" class="section topology-section" aria-labelledby="topology-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Topology</p>
+          <h2 id="topology-title">Cisco device to registry delivery path</h2>
+          <p>
+            The passthrough service sits between network devices and container registries.
+            It can run as a Docker container or in Kubernetes while targeting Docker Hub,
+            GHCR, or an enterprise private registry reachable from the service.
+          </p>
+        </div>
+
+        <div class="topology-toolbar reveal">
+          <div class="topology-switch" role="tablist" aria-label="Topology mode">
+            <button type="button" role="tab" aria-selected="true" data-topology="plain">
+              Registry pull
+            </button>
+            <button type="button" role="tab" aria-selected="false" data-topology="auth">
+              With authentication
+            </button>
+          </div>
+        </div>
+
+        <div class="topology-stage reveal" data-topology-stage aria-live="polite">
+          <article class="topology-node topology-device">
+            <div class="node-heading">
+              <span class="node-symbol" aria-hidden="true"></span>
+              <div>
+                <p class="node-kicker">Network edge</p>
+                <h3>Cisco device</h3>
+              </div>
+            </div>
+            <p>
+              Runs <code>copy http</code> against the passthrough endpoint and stores the
+              returned Docker save archive on local storage.
+            </p>
+            <ul class="topology-details">
+              <li>
+                <span>Client command</span>
+                <strong>copy http://passthrough:8080/... flash:image.tar</strong>
+              </li>
+              <li class="plain-only">
+                <span>Credentials</span>
+                <strong>No registry credentials on the device</strong>
+              </li>
+              <li class="auth-only">
+                <span>Credentials</span>
+                <strong>ip http client username / password</strong>
+              </li>
+            </ul>
+          </article>
+
+          <div class="topology-link topology-link-client" aria-label="Cisco device to passthrough exchange">
+            <span class="link-line bidirectional" aria-hidden="true"></span>
+            <div class="link-copy">
+              <strong class="plain-only">HTTP GET plus tar response</strong>
+              <strong class="auth-only">401 Basic challenge plus retry</strong>
+              <span class="plain-only">Cisco receives the archive after the image is prepared.</span>
+              <span class="auth-only">Cisco retries with Authorization: Basic for this request.</span>
+            </div>
+          </div>
+
+          <article class="topology-node topology-passthrough">
+            <div class="node-heading">
+              <span class="node-symbol" aria-hidden="true"></span>
+              <div>
+                <p class="node-kicker">Hosted service</p>
+                <h3>docker-passthrough container</h3>
+              </div>
+            </div>
+            <p>
+              Resolves the requested image, fetches OCI content from the selected
+              registry, and streams a Docker save-compatible tar archive back to the
+              Cisco device.
+            </p>
+            <div class="node-chips" aria-label="Deployment targets">
+              <span>Docker</span>
+              <span>Kubernetes</span>
+            </div>
+            <ul class="topology-details">
+              <li class="plain-only">
+                <span>Routes</span>
+                <strong>/docker or /registry</strong>
+              </li>
+              <li class="auth-only">
+                <span>Route</span>
+                <strong>/registry-auth/{scheme}/{host}/docker/{image}.tar</strong>
+              </li>
+              <li>
+                <span>Role</span>
+                <strong>Neutral conduit for registry selection, auth forwarding, and tar streaming</strong>
+              </li>
+            </ul>
+          </article>
+
+          <div class="topology-link topology-link-registry" aria-label="Passthrough to registry exchange">
+            <span class="link-line" aria-hidden="true"></span>
+            <div class="link-copy">
+              <strong class="plain-only">OCI Registry V2 pull</strong>
+              <strong class="auth-only">Bearer token or Basic upstream auth</strong>
+              <span class="plain-only">Manifest, config, and layers are fetched from the target registry.</span>
+              <span class="auth-only">The passthrough forwards non-persistent client credentials upstream.</span>
+            </div>
+          </div>
+
+          <article class="topology-node topology-registry">
+            <div class="node-heading">
+              <span class="node-symbol" aria-hidden="true"></span>
+              <div>
+                <p class="node-kicker">Image source</p>
+                <h3>Container registry</h3>
+              </div>
+            </div>
+            <p>
+              Serves manifests, configs, and layer blobs from Docker Hub, GHCR, or a
+              private registry hosted inside an enterprise network.
+            </p>
+            <div class="node-chips" aria-label="Registry examples">
+              <span>Docker Hub</span>
+              <span>GHCR</span>
+              <span>Private registry</span>
+            </div>
+            <ul class="topology-details">
+              <li class="plain-only">
+                <span>Access</span>
+                <strong>Anonymous or service-configured credentials</strong>
+              </li>
+              <li class="auth-only">
+                <span>Access</span>
+                <strong>Registry challenge, token service, or Basic realm</strong>
+              </li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="topology-notes reveal">
+          <article>
+            <h3>Device reachability</h3>
+            <p>The Cisco device only needs HTTP reachability to the passthrough endpoint.</p>
+          </article>
+          <article>
+            <h3>Registry reachability</h3>
+            <p>The passthrough service needs network access to the selected registry host.</p>
+          </article>
+          <article>
+            <h3>Credential scope</h3>
+            <p>Authentication mode forwards request credentials for one transfer and does not persist them in the service.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="flow" class="section" aria-labelledby="flow-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Execution flow</p>
+          <h2 id="flow-title">From Cisco copy to Docker load</h2>
+          <p>
+            Each request is prepared before a success response is sent, so registry errors
+            are returned as HTTP failures instead of partial tar files.
+          </p>
+        </div>
+
+        <div class="flow-board reveal" aria-label="Passthrough request flow">
+          <div class="flow-node active" data-step="0">
+            <span>1</span>
+            <strong>HTTP GET</strong>
+            <p>Cisco device or curl requests a tar URL.</p>
+          </div>
+          <div class="flow-line"></div>
+          <div class="flow-node" data-step="1">
+            <span>2</span>
+            <strong>Parse image</strong>
+            <p>Filename becomes repository and tag.</p>
+          </div>
+          <div class="flow-line"></div>
+          <div class="flow-node" data-step="2">
+            <span>3</span>
+            <strong>Resolve registry</strong>
+            <p>Static config or request-selected target.</p>
+          </div>
+          <div class="flow-line"></div>
+          <div class="flow-node" data-step="3">
+            <span>4</span>
+            <strong>Fetch layers</strong>
+            <p>Manifest, config, and blobs are prepared.</p>
+          </div>
+          <div class="flow-line"></div>
+          <div class="flow-node" data-step="4">
+            <span>5</span>
+            <strong>Stream tar</strong>
+            <p>Docker save archive returns to the client.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="observability" class="section telemetry-section" aria-labelledby="telemetry-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">OpenTelemetry</p>
+          <h2 id="telemetry-title">Trace every meaningful hop</h2>
+          <p>
+            Server spans, internal parse/auth spans, and outbound registry HTTP client
+            spans are joined under one execution trace.
+          </p>
+        </div>
+
+        <div class="telemetry-layout">
+          <div class="trace-tree reveal">
+            <button type="button" class="trace-row expanded" data-trace-toggle>
+              <span class="tree-glyph"></span>
+              <strong>GET /registry-auth/{scheme}/{host}/docker/{filename}</strong>
+              <em>server</em>
+            </button>
+            <div class="trace-children">
+              <div class="trace-row"><span></span><strong>parse_image_request</strong><em>internal</em></div>
+              <div class="trace-row"><span></span><strong>extract_registry_client_credentials</strong><em>internal</em></div>
+              <div class="trace-row"><span></span><strong>resolve_manifest</strong><em>client</em></div>
+              <div class="trace-row nested"><span></span><strong>GET /v2/{repository}/manifests/{reference}</strong><em>client</em></div>
+              <div class="trace-row nested"><span></span><strong>GET {registry_token_endpoint}</strong><em>client</em></div>
+              <div class="trace-row"><span></span><strong>fetch_config_blob</strong><em>client</em></div>
+              <div class="trace-row"><span></span><strong>download_layer_N</strong><em>client</em></div>
+              <div class="trace-row"><span></span><strong>write_layer_tar_N</strong><em>internal</em></div>
+            </div>
+          </div>
+
+          <div class="telemetry-facts reveal">
+            <h3>Useful attributes</h3>
+            <ul>
+              <li><code>http.route</code> shows which download mode handled the request.</li>
+              <li><code>registry.target.source</code> distinguishes env-configured and URL-selected registries.</li>
+              <li><code>registry.auth.type</code> records non-secret upstream auth type.</li>
+              <li><code>http.request.resend_count</code> marks registry auth challenge retries.</li>
+              <li><code>oci.layer.decompressed_size</code> captures prepared layer size.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="validation" class="section validation-section" aria-labelledby="validation-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Validation</p>
+          <h2 id="validation-title">App-hosting paths exercised end to end</h2>
+          <p>
+            The Cisco workflow has been checked from <code>copy http</code> through
+            archive storage, app-hosting install, activation, start, status, and cleanup.
+          </p>
+        </div>
+
+        <div class="validation-grid reveal">
+          <article>
+            <h3>Public pulls</h3>
+            <p>
+              Docker Hub, local registry, and public GHCR images were copied to the
+              device, installed, activated, started, and verified in app-hosting.
+            </p>
+            <code>/docker</code>
+            <code>/registry/https/ghcr.io</code>
+          </article>
+          <article>
+            <h3>Authenticated paths</h3>
+            <p>
+              Static service credentials and Cisco-supplied HTTP client credentials were
+              both exercised through copy and app-hosting start.
+            </p>
+            <code>/docker with REGISTRY_CLIENT_AUTH=required</code>
+            <code>/registry-auth/{scheme}/{host}</code>
+          </article>
+          <article>
+            <h3>Private GHCR requirement</h3>
+            <p>
+              Private GHCR uses the same authenticated route, but requires a GitHub token
+              with package read permission for the target private package.
+            </p>
+            <code>my-org__private-image_latest.tar</code>
+          </article>
+        </div>
+      </section>
+
+      <section id="examples" class="section examples-section" aria-labelledby="examples-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Copyable examples</p>
+          <h2 id="examples-title">Common deployment patterns</h2>
+          <p>Switch between Docker Hub, GHCR, enterprise registry, OCI image, app-hosting, and tracing examples.</p>
+        </div>
+
+        <div class="tabs reveal" data-tabs>
+          <div class="tab-list" role="tablist" aria-label="Example snippets">
+            <button type="button" role="tab" aria-selected="true" data-tab="dockerhub">Docker Hub</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="ghcr">GHCR</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="registry2">Registry2</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="oci">OCI Image</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="apphosting">App-hosting</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="otel">Tracing</button>
+          </div>
+
+          <div class="tab-panel active" data-panel="dockerhub" role="tabpanel">
+            <button class="icon-button copy-button panel-copy" type="button" data-copy-target="snippet-dockerhub">
+              Copy
+            </button>
+            <pre id="snippet-dockerhub"><code>configure terminal
+ip http client username &lt;dockerhub-user&gt;
+ip http client password &lt;dockerhub-token&gt;
+end
+copy http://&lt;passthrough-ip&gt;:8080/registry-auth/https/docker.io/docker/&lt;dockerhub-user&gt;_private-image_2026.06.tar flash:private-image.tar</code></pre>
+          </div>
+
+          <div class="tab-panel" data-panel="ghcr" role="tabpanel">
+            <button class="icon-button copy-button panel-copy" type="button" data-copy-target="snippet-ghcr">
+              Copy
+            </button>
+            <pre id="snippet-ghcr"><code>configure terminal
+ip http client username &lt;github-user&gt;
+ip http client password &lt;github-token-with-package-read-permission&gt;
+end
+copy http://&lt;passthrough-ip&gt;:8080/registry-auth/https/ghcr.io/docker/my-org__private-image_latest.tar flash:ghcr-image.tar</code></pre>
+          </div>
+
+          <div class="tab-panel" data-panel="registry2" role="tabpanel">
+            <button class="icon-button copy-button panel-copy" type="button" data-copy-target="snippet-registry2">
+              Copy
+            </button>
+            <pre id="snippet-registry2"><code>configure terminal
+ip http client username &lt;registry-user&gt;
+ip http client password &lt;registry-token&gt;
+end
+copy http://&lt;passthrough-ip&gt;:8080/registry-auth/http/registry2.example.com:5000/docker/team__platform__api_2026.06.tar flash:api.tar</code></pre>
+          </div>
+
+          <div class="tab-panel" data-panel="oci" role="tabpanel">
+            <button class="icon-button copy-button panel-copy" type="button" data-copy-target="snippet-oci">
+              Copy
+            </button>
+            <pre id="snippet-oci"><code>docker run -d \
+  --name docker-http-passthrough \
+  -p 8080:8080 \
+  ghcr.io/cisco-open/docker-http-passthrough:latest
+
+copy http://&lt;passthrough-ip&gt;:8080/registry/https/ghcr.io/docker/cisco-open__docker-http-passthrough_latest.tar usbflash1:docker-http-passthrough.tar</code></pre>
+          </div>
+
+          <div class="tab-panel" data-panel="apphosting" role="tabpanel">
+            <button class="icon-button copy-button panel-copy" type="button" data-copy-target="snippet-apphosting">
+              Copy
+            </button>
+            <pre id="snippet-apphosting"><code>app-hosting install appid &lt;appid&gt; package flash:&lt;image&gt;.tar
+configure terminal
+app-hosting appid &lt;appid&gt;
+ app-vnic AppGigabitEthernet trunk
+  vlan &lt;vlan-id&gt; guest-interface 0
+end
+app-hosting activate appid &lt;appid&gt;
+app-hosting start appid &lt;appid&gt;
+show app-hosting list | include &lt;appid&gt;</code></pre>
+          </div>
+
+          <div class="tab-panel" data-panel="otel" role="tabpanel">
+            <button class="icon-button copy-button panel-copy" type="button" data-copy-target="snippet-otel">
+              Copy
+            </button>
+            <pre id="snippet-otel"><code>OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+OTEL_SERVICE_NAME=docker-http-passthrough
+RUST_LOG=info
+docker compose up -d</code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>Docker HTTP Passthrough</strong>
+        <p>
+          Apache 2.0 licensed. Third-party notices cover the documentation
+          tooling and diagram runtime.
+        </p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/cisco-open/docker-http-passthrough/blob/main/README.md">README</a>
+        <a href="https://github.com/cisco-open/docker-http-passthrough/blob/main/LICENSE">License</a>
+        <a href="https://github.com/cisco-open/docker-http-passthrough/blob/main/NOTICE">Notices</a>
+        <a href="https://github.com/cisco-open/docker-http-passthrough">GitHub</a>
+      </div>
+    </footer>
+
+    <div class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

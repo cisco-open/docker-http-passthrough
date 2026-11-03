@@ -58,7 +58,7 @@ hex = "0.4"
 
 # OpenTelemetry
 opentelemetry = { version = "0.21", features = ["trace"] }
-opentelemetry_sdk = { version = "0.21", features = ["rt-tokio"] }
+opentelemetry_sdk = { version = "0.32", features = ["rt-tokio"] }
 opentelemetry-otlp = { version = "0.14", features = ["tonic"] }
 
 # Environment variables

@@ -43,6 +43,91 @@ Docker HTTP Passthrough turns a simple HTTP GET into a Docker save-format tar ar
 
 The passthrough service does not use the local Docker daemon to pull images. It talks directly to the registry API.
 
+## Verified preparation command
+
+The separate `prepare` command acquires an image by SHA-256 digest and explicit
+platform, verifies its content, and writes a retained Docker-save archive. It
+does not start the HTTP server. Running without arguments preserves the existing
+HTTP workflow described below.
+
+```bash
+docker-http-passthrough prepare \
+  --registry https://registry.example.com \
+  --repository vendor/agent \
+  --digest sha256:<64-lowercase-hex-digits> \
+  --platform linux/amd64 \
+  --output-dir ./prepared-agent
+```
+
+The destination must not exist and its parent must exist. On Linux and macOS,
+the completed directory is published with an atomic no-replace rename. Errors
+before publication remove temporary files and expose no completed destination.
+A filesystem durability error after publication can leave the complete output
+directory present; inspect its checksums and reuse it rather than overwriting it.
+A hard process kill
+can leave a hidden `.dhp-prepare-*` temporary directory; remove abandoned staging
+directories only after confirming no preparation is using them. Existing output
+directories are never overwritten, including on retries.
+
+The command verifies raw index/manifest/config/layer digests and descriptor
+sizes, exact platform selection, config architecture, layer count and each
+uncompressed diff ID. It supports single manifests and one-level indexes, with
+plain or gzip layers. Nested indexes, ambiguous/missing platforms, foreign or
+zstd layers, and tags as preparation inputs are rejected. A successful conversion
+does not establish that the application or package is compatible with a device.
+
+Output files:
+
+| File | Meaning |
+| --- | --- |
+| `package.tar` | Deterministic Docker-save archive with a valid digest-derived internal tag |
+| `descriptor.json` | Draft `apphosting.cisco.com/v1alpha1` descriptor; final package digest and byte count, source identity, producer binary digest and recipe digest |
+| `provenance.json` | Unsigned in-toto statement binding the source, converter and verification results to the package |
+| `recipe.json` | Exact conversion recipe bytes used by `producer.recipeDigest` |
+| `checksums.json` | SHA-256 values of the package and metadata files, including final JSON newlines |
+
+The descriptor follows [the vendored draft schema](schemas/app-hosting-artifact-v1alpha1.schema.json).
+The archive is deterministic for identical immutable inputs and converter build;
+the descriptor's `createdAt` records this preparation. Reuse a successful output
+directory when retrying publication. A new preparation is a new production record,
+even if its package bytes match. `buildDigest` hashes the actual running executable,
+not a claimed version string or a container image manifest.
+
+These files are **unsigned and unapproved**. The checksums are integrity metadata,
+not independent proof of trust. For CVK Verified delivery, a separate pipeline
+signs the exact descriptor bytes with an accepted producer identity (for example
+using Cosign) and publishes unchanged package/metadata bytes. Supplier-signature
+verification, vulnerability scanning and separately signing provenance are optional
+pipeline policies, not requirements imposed by this command. Deployment approval,
+revocation and vulnerability policy belong to a separate governed lifecycle. Device
+compatibility, IOx package signing and CVK installation remain separate steps. Do
+not present unsigned output as an authenticated or approved release.
+
+Preparation uses HTTPS only. `--registry` defaults to `REGISTRY_URL`, then Docker
+Hub; credentials come from `REGISTRY_USERNAME`/`REGISTRY_PASSWORD` or
+`REGISTRY_BEARER_TOKEN` (`REGISTRY_TOKEN` alias). Those credentials apply only to
+the explicitly selected registry and its accepted token endpoint for this local
+invocation. Cross-origin bearer challenges require an exact `--auth-url` (or
+`REGISTRY_AUTH_URL`); Docker Hub's token endpoint is built in. Token scopes are
+restricted to the requested repository's pull permission. Manifest and token
+redirects fail closed. Blob redirects require `--blob-origin https://allowed-host`
+for each additional origin and never receive registry credentials. Configure CDN
+origins actually used by the trusted registry; they are not discovered or trusted
+automatically. Endpoints cannot contain credentials, queries or fragments.
+
+`--max-bytes` defaults to 2 GiB, has a 64 GiB ceiling, and separately bounds compressed layer bytes,
+expanded layer bytes and the final archive. Metadata is limited to 4 MiB, indexes
+to 1,024 entries and images to 128 layers. Peak temporary storage can approach
+three times the byte budget plus bounded metadata. `--timeout-seconds` defaults
+to 1,800 for the whole command; individual network requests are capped at 120
+seconds with a 15-second connection timeout. The command prepares one image at a
+time; operators must bound parallel CI jobs and available filesystem capacity.
+The existing HTTP routes do not inherit these preparation guarantees or limits.
+
+For a private registry CA, `prepare --ca-file CA.pem` adds one PEM root to the preparation client's normal TLS trust. Certificate and hostname verification remain enabled; the HTTP server defaults are unchanged.
+
+Run `docker-http-passthrough prepare --help` for the command syntax.
+
 ## Choose a Download Mode
 
 Pick the route based on where the registry details and credentials should come from.

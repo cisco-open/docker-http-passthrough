@@ -20,6 +20,8 @@ use std::env;
 use std::pin::Pin;
 use tracing::{debug, info};
 
+pub mod verified;
+
 /// Base URL for the container registry V2 API.
 /// Default: Docker Hub (registry-1.docker.io)
 static REGISTRY_URL: Lazy<String> = Lazy::new(|| {

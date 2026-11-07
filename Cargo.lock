@@ -316,6 +316,7 @@ dependencies = [
  "flate2",
  "futures",
  "hex",
+ "libc",
  "once_cell",
  "opentelemetry",
  "opentelemetry-otlp",

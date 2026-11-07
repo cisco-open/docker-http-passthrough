@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Cisco Systems, Inc.
 
+mod prepare;
 mod registry;
 mod tar_builder;
 mod telemetry;
@@ -82,6 +83,10 @@ struct DownloadRouteContext {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if !args.is_empty() {
+        return prepare::run_cli(&args).await;
+    }
     // Initialize logging
     let subscriber = FmtSubscriber::builder()
         .with_env_filter(
